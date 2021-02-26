@@ -15,39 +15,44 @@
 <?php
 //$db->query("INSERT INTO RECORDS(TITLE,TEXT) VALUES('哈哈哈','哈哈哈哈哈哈哈')");
 //处理请求
-if(isset($_POST)){
-    if($_POST["action"]=="delete"){
-        $db->query("DELETE FROM RECORDS WHERE ID= :id",array("id"=>$_POST["id"]));
+
+$query_prepare=function($str){
+    return htmlspecialchars(stripslashes(trim($str)));
+};//防xss，嗐
+if (isset($_POST) and array_key_exists("action", $_POST) and array_key_exists("id", $_POST)) {
+
+    if ($_POST["action"] == "delete") {
+        $db->query("DELETE FROM RECORDS WHERE ID= :id", array("id" => $query_prepare($_POST["id"])));
     }
 
-    if($_POST["action"]=="edit"){
-        if(intval($_POST["id"])==0){
-            $db->query("INSERT INTO RECORDS (TITLE,TEXT) VALUES (:title,:text)",array("title"=>$_POST["title"],"text"=>$_POST["text"]));
-        }
-        else{
-           $db->query("UPDATE RECORDS SET TITLE=:title, TEXT=:text WHERE ID=:id",array("title"=>$_POST["title"],"text"=>$_POST["text"],"id"=>$_POST["id"]));
+    if ($_POST["action"] == "edit") {
+        if (array_key_exists("title", $_POST) and array_key_exists("text", $_POST)) {
+            if (intval($_POST["id"]) == 0) {
+                $db->query("INSERT INTO RECORDS (TITLE,TEXT) VALUES (:title,:text)", array("title" => $query_prepare($_POST["title"]), "text" => $query_prepare($_POST["text"])));
+            } else {
+                $db->query("UPDATE RECORDS SET TITLE=:title, TEXT=:text WHERE ID=:id", array("title" => $query_prepare($_POST["title"]), "text" => $query_prepare($_POST["text"]), "id" => $query_prepare($_POST["id"])));
+            }
         }
     }
 }
-if(isset($_GET) and $_GET){
-    $q_string=$_GET["q"];
-   // echo $q_string;
-    $q_array=explode(" ",$q_string);
-   // echo var_dump($q_array);
-    $query_str="SELECT * FROM RECORDS WHERE TRUE ";
-    $n=count($q_array);
-    $i=0;
-    while($i<$n){
+if (isset($_GET) and array_key_exists("q", $_GET)) {
+    $q_string = $query_prepare($_GET["q"]);
+    // echo $q_string;
+    $q_array = explode(" ", $q_string);
+    // echo var_dump($q_array);
+    $query_str = "SELECT * FROM RECORDS WHERE TRUE ";
+    $n = count($q_array);
+    $i = 0;
+    while ($i < $n) {
         //$query_str=$query_str."AND LOCATE(:".$i.",TITLE) AND LOCATE(:".$i.",TEXT) ";
-        $query_str=$query_str."AND LOCATE(:".$i.",CONCAT(TEXT,TITLE)) ";
+        $query_str = $query_str . "AND LOCATE(:" . $i . ",CONCAT(TEXT,TITLE)) ";
         $i++;
     }
-  //  echo $query_str;
-    $nb=$db->query($query_str,$q_array);
+    //  echo $query_str;
+    $nb = $db->query($query_str, $q_array);
     //$nb = $db->query("SELECT * FROM RECORDS");
-}
-else{
-    $q_string="";
+} else {
+    $q_string = "";
     $nb = $db->query("SELECT * FROM RECORDS");
 }
 ?>
@@ -60,25 +65,25 @@ else{
     </div>
 
     <div class="navbar-fixed">
-    <nav>
-        <div class="nav-wrapper">
-            <form>
-                <div class="input-field">
-                    <input id="search" type="search" placeholder="在标题和内容中查找……" onsearch="search_q()">
-                    <label class="label-icon " for="search"><i class="mdi mdi-magnify"></i></label>
-                </div>
-            </form>
-        </div>
-    </nav>
+        <nav>
+            <div class="nav-wrapper">
+                <form>
+                    <div class="input-field">
+                        <input id="search" type="search" placeholder="在标题和内容中查找……" onsearch="search_q()">
+                        <label class="label-icon " for="search"><i class="mdi mdi-magnify"></i></label>
+                    </div>
+                </form>
+            </div>
+        </nav>
     </div>
     <script>
         var nb
-        nb=<?php
-            echo json_encode($nb)
-            ?>;
+        nb =<?php
+        echo json_encode($nb)
+        ?>;
         $("#search").val("<?php echo $q_string?>")
 
-        all_toggle=function(){
+        all_toggle = function () {
             $(".my-header").toggleClass("hide")
             $("nav").toggleClass("hide")
             $("#records").toggleClass("hide")
@@ -86,18 +91,18 @@ else{
             $("#new").toggleClass("hide")
         }
         $(document).ready(function () {
-            $("nav").css("width",$(".container").css("width"));
-            $(".fixed-action-btn").css("right",23+($(window).width()-$(".container").width())/2);
+            $("nav").css("width", $(".container").css("width"));
+            $(".fixed-action-btn").css("right", 23 + ($(window).width() - $(".container").width()) / 2);
             $("#records").toggleClass("hide");
             $('.modal').modal();
         });
-        $(window).resize(function(){
-            container_width=$(".container").width();
-            $("nav").css("width",container_width);
-            $(".fixed-action-btn").css("right",23+($(window).width()-$(".container").width())/2);
+        $(window).resize(function () {
+            container_width = $(".container").width();
+            $("nav").css("width", container_width);
+            $(".fixed-action-btn").css("right", 23 + ($(window).width() - $(".container").width()) / 2);
         });
-        var fill_title=""
-        var fill_text=""
+        var fill_title = ""
+        var fill_text = ""
     </script>
     <h4 class="my-header">记事本</h4>
     <h5 class="my-header">搜索到<?php echo count($nb); ?>条记录</h5>
@@ -129,12 +134,14 @@ else{
                 <div class="card-content">
                     <span class="card-title">
                         <div class="input-field">
-                            <input type="text" placeholder="标题" style="font-size: xx-large;text-align: center;font-weight: bold" id="input-title">
+                            <input type="text" placeholder="标题"
+                                   style="font-size: xx-large;text-align: center;font-weight: bold" id="input-title">
                         </div>
                     </span>
                     <p>
-                        <div class="input-field">
-                        <textarea placeholder="正文" class="materialize-textarea" style="font-size: large" id="input-text">    </textarea>
+                    <div class="input-field">
+                        <textarea placeholder="正文" class="materialize-textarea" style="font-size: large"
+                                  id="input-text">    </textarea>
                     </div>
                     </p>
                 </div>
@@ -151,7 +158,7 @@ else{
             <h4>确定删除这条记录？</h4>
         </div>
         <div class="modal-footer">
-            <a href="#" class=" modal-action modal-close waves-effect waves-red btn-flat"id="delete-yes">确定</a>
+            <a href="#" class=" modal-action modal-close waves-effect waves-red btn-flat" id="delete-yes">确定</a>
             <a href="#" class=" modal-action modal-close waves-effect waves-green btn-flat">取消</a>
         </div>
     </div>
@@ -167,12 +174,12 @@ else{
     </div>
 </div>
 <script>
-    var edit_id=0
+    var edit_id = 0
     $("#new").click(function () {
         all_toggle()
-        edit_id=0
-        fill_title=""
-        fill_text=""
+        edit_id = 0
+        fill_title = ""
+        fill_text = ""
         $("#input-title").val("")
         $("#input-text").val("")
         $("#input-text").trigger("autoresize")
@@ -180,26 +187,25 @@ else{
     });
     $(".save-no").click(function () {
         all_toggle()
-        edit_id=0
-        fill_title=""
-        fill_text=""
+        edit_id = 0
+        fill_title = ""
+        fill_text = ""
     })
     $("#back").click(function () {
-        if($("#input-title").val()==fill_title&&$("#input-text").val()==fill_text) {
+        if ($("#input-title").val() == fill_title && $("#input-text").val() == fill_text) {
             all_toggle()
             edit_id = 0
-        }
-        else{
+        } else {
             $("#modal-unsave").modal("open")
         }
     });
     $(".rec-edit").click(function () {
         all_toggle()
-        edit_id=Number($(this).parent().parent().parent().parent().attr("id").substring(4))
-        for (rec in nb){
-            if (nb[rec]["ID"]==edit_id){
-                fill_title=nb[rec]["TITLE"]
-                fill_text=nb[rec]["TEXT"]
+        edit_id = Number($(this).parent().parent().parent().parent().attr("id").substring(4))
+        for (rec in nb) {
+            if (nb[rec]["ID"] == edit_id) {
+                fill_title = nb[rec]["TITLE"]
+                fill_text = nb[rec]["TEXT"]
             }
         }
         $("#input-title").val(fill_title)
@@ -209,49 +215,52 @@ else{
 
     })
     $(".rec-delete").click(function () {
-        edit_id=Number($(this).parent().parent().parent().parent().attr("id").substring(4))
+        edit_id = Number($(this).parent().parent().parent().parent().attr("id").substring(4))
     })
     $("#delete-yes").click(function () {
-        $.post("notebook.php",{id:edit_id,action:"delete"},function (data,status) {
-            if(status=="success"){
-                Materialize.toast('删除成功！', 1000,"",function () {
+        $.post("notebook.php", {id: edit_id, action: "delete"}, function (data, status) {
+            if (status == "success") {
+                Materialize.toast('删除成功！', 1000, "", function () {
                     window.location.assign("notebook.php")
                 })
-            }
-            else{
+            } else {
                 Materialize.toast('删除失败！', 4000)
             }
         })
     })
     $(".save-yes").click(function () {
-        if($("#input-title").val()==fill_title&&$("#input-text").val()==fill_text){
+        if ($("#input-title").val() == fill_title && $("#input-text").val() == fill_text) {
             Materialize.toast('未修改！', 4000)
-        }
-        else{
-            if($("#input-title").val()==""){
-            $("#input-title").val("无题")}
-            $.post("notebook.php",{id:edit_id,action:"edit",title:$("#input-title").val(),text:$("#input-text").val()},function (data,status) {
-                if(status=="success"){
-                    Materialize.toast("保存成功！",1000,"",function () {
+        } else {
+            if ($("#input-title").val() == "") {
+                $("#input-title").val("无题")
+            }
+            $.post("notebook.php", {
+                id: edit_id,
+                action: "edit",
+                title: $("#input-title").val(),
+                text: $("#input-text").val()
+            }, function (data, status) {
+                if (status == "success") {
+                    Materialize.toast("保存成功！", 1000, "", function () {
                         window.location.assign("notebook.php")
                     })
-                }
-                else{
+                } else {
                     Materialize.toast('保存失败！', 4000)
                 }
             })
         }
     })
     $("#search").keydown(function (event) {
-        if($(this).val()){
-            if(event.which==13){
-                window.location.assign("notebook.php?q="+$(this).val())
+        if ($(this).val()) {
+            if (event.which == 13) {
+                window.location.assign("notebook.php?q=" + $(this).val())
             }
         }
     })
-    search_q=function () {
-        if($("#search").val()){
-            window.location.assign("notebook.php?q="+$("#search").val())
+    search_q = function () {
+        if ($("#search").val()) {
+            window.location.assign("notebook.php?q=" + $("#search").val())
         }
     }
 </script>
