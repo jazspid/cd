@@ -13,47 +13,40 @@
 </head>
 <body>
 <?php
-//$db->query("INSERT INTO RECORDS(TITLE,TEXT) VALUES('哈哈哈','哈哈哈哈哈哈哈')");
 //处理请求
-
-$query_prepare=function($str){
+$query_prepare = function ($str) {
     return htmlspecialchars(stripslashes(trim($str)));
-};//防xss，嗐
+};
+//防xss，嗐
+$query_str_delete = "DELETE FROM RECORDS WHERE ID= :id";
+$query_str_insert = "INSERT INTO RECORDS (TITLE,TEXT) VALUES (:title,:text)";
+$query_str_update = "UPDATE RECORDS SET TITLE=:title, TEXT=:text WHERE ID=:id";
+$query_str_select = "SELECT * FROM RECORDS";
 if (isset($_POST) and array_key_exists("action", $_POST) and array_key_exists("id", $_POST)) {
-
     if ($_POST["action"] == "delete") {
-        $db->query("DELETE FROM RECORDS WHERE ID= :id", array("id" => $query_prepare($_POST["id"])));
+        $db->query($query_str_delete, array("id" => $query_prepare($_POST["id"])));
     }
-
     if ($_POST["action"] == "edit") {
         if (array_key_exists("title", $_POST) and array_key_exists("text", $_POST)) {
             if (intval($_POST["id"]) == 0) {
-                $db->query("INSERT INTO RECORDS (TITLE,TEXT) VALUES (:title,:text)", array("title" => $query_prepare($_POST["title"]), "text" => $query_prepare($_POST["text"])));
+                $db->query($query_str_insert, array("title" => $query_prepare($_POST["title"]), "text" => $query_prepare($_POST["text"])));
             } else {
-                $db->query("UPDATE RECORDS SET TITLE=:title, TEXT=:text WHERE ID=:id", array("title" => $query_prepare($_POST["title"]), "text" => $query_prepare($_POST["text"]), "id" => $query_prepare($_POST["id"])));
+                $db->query($query_str_update, array("title" => $query_prepare($_POST["title"]), "text" => $query_prepare($_POST["text"]), "id" => $query_prepare($_POST["id"])));
             }
         }
     }
 }
 if (isset($_GET) and array_key_exists("q", $_GET)) {
     $q_string = $query_prepare($_GET["q"]);
-    // echo $q_string;
     $q_array = explode(" ", $q_string);
-    // echo var_dump($q_array);
-    $query_str = "SELECT * FROM RECORDS WHERE TRUE ";
-    $n = count($q_array);
-    $i = 0;
-    while ($i < $n) {
-        //$query_str=$query_str."AND LOCATE(:".$i.",TITLE) AND LOCATE(:".$i.",TEXT) ";
-        $query_str = $query_str . "AND LOCATE(:" . $i . ",CONCAT(TEXT,TITLE)) ";
-        $i++;
+    $query_str = "$query_str_select WHERE 1";
+    foreach ($q_array as $index => $value) {
+        $query_str = "$query_str AND LOCATE(:$index ,CONCAT(TEXT,TITLE)) ";
     }
-    //  echo $query_str;
     $nb = $db->query($query_str, $q_array);
-    //$nb = $db->query("SELECT * FROM RECORDS");
 } else {
     $q_string = "";
-    $nb = $db->query("SELECT * FROM RECORDS");
+    $nb = $db->query($query_str_select);
 }
 ?>
 <div class="container">
@@ -61,9 +54,7 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
         <a class="btn-floating btn-large red waves-effect">
             <i class="mdi mdi-plus"></i>
         </a>
-
     </div>
-
     <div class="navbar-fixed">
         <nav>
             <div class="nav-wrapper">
@@ -82,7 +73,6 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
         echo json_encode($nb)
         ?>;
         $("#search").val("<?php echo $q_string?>")
-
         all_toggle = function () {
             $(".my-header").toggleClass("hide")
             $("nav").toggleClass("hide")
