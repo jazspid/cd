@@ -1244,27 +1244,38 @@ var FimTale = {
       searchDelay: null,
       //艾特
       bindNameSearch: function (inputSelector, success, failure) {
-        inputSelector.on('input propertychange', function () {
-          var text = inputSelector.val(),
-            previousText = inputSelector.attr('data-text') || '';
-          inputSelector.attr('data-text', text);
-          if (!previousText.length || text.indexOf(previousText) > -1) {
-            if (FimTale.editor.tools.searchDelay != null) clearTimeout(FimTale.editor.tools.searchDelay);
-            FimTale.editor.tools.searchDelay = setTimeout(function () {
-              FimTale.global.getUsersByName(text, function (res) {
-                var tempRes = {};
-                for (var k in res) {
-                  tempRes[res[k]['UserName']] = res[k]['Avatar'];
-                }
-                success(tempRes);
-              }, function (err) {
-                failure(err);
+          var IME_flag=true;
+          function searchUnit(){
+              var text = inputSelector.val(),
+              previousText = inputSelector.attr('data-text') || '';
+              inputSelector.attr('data-text', text);
+              if (!previousText.length || text.indexOf(previousText) > -1) {
+                  if (FimTale.editor.tools.searchDelay != null) clearTimeout(FimTale.editor.tools.searchDelay);
+                  FimTale.editor.tools.searchDelay = setTimeout(function () {
+                      if(IME_flag){
+                          FimTale.global.getUsersByName(text, function (res) {
+                              var tempRes = {};
+                              for (var k in res) {
+                                  tempRes[res[k]['UserName']] = res[k]['Avatar'];
+                                  }
+                              success(tempRes);
+                              }, function (err) {
+                                  failure(err);
+                              })};
+                  }, 1000);
+              } else {
+                  failure();
+                  }}
+          inputSelector.on('compositionstart',function(){
+              IME_flag=false;
               });
-            }, 1000);
-          } else {
-            failure();
-          }
-        });
+          inputSelector.on('compositionend',function(){
+              IME_flag=true;
+              searchUnit();
+              });
+          inputSelector.on('input propertychange', function () {
+              searchUnit();
+              });
       },
       atInit: function () {
         $('body').append('<div id="at-container" class="modal modal-fixed-footer"><a href="#!" class="modal-close waves-effect waves-red btn-flat" style="position:absolute;top:0%;right:0%;font-size:30px;">×</a><div class="modal-content"><div class="input-field"><i class="material-icons prefix">&#xe8b6;</i><input id="at-search-input" type="text" placeholder="' + window.translate('Search_By_UserName') + '"></div><table id="at-list-result"></table></div></div>');
