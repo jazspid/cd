@@ -22,7 +22,7 @@ $query_str_delete = "DELETE FROM RECORDS WHERE ID= :id";
 $query_str_insert = "INSERT INTO RECORDS (TITLE,TEXT) VALUES (:title,:text)";
 $query_str_update = "UPDATE RECORDS SET TITLE=:title, TEXT=:text WHERE ID=:id";
 $query_str_select = "SELECT * FROM RECORDS";
-if (isset($_POST) and array_key_exists("action", $_POST) and array_key_exists("id", $_POST)) {
+if (isset($_POST) and array_key_exists("action", $_POST) and array_key_exists("id", $_POST) and is_int($_POST["id"])) {
     if ($_POST["action"] == "delete") {
         $db->query($query_str_delete, array("id" => $query_prepare($_POST["id"])));
     }
@@ -99,22 +99,23 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
     <div id="records" class="hide">
         <?php
         foreach ($nb as $index => $dict) {
-            echo '
-                <div class="row" id="rec-' . $dict['ID'] . '">
-                    <div class="col s12 m12 l12">
-                        <div class="card">
-                            <div class="card-content">
-                                <span class="card-title">' . $dict['TITLE'] . '</span>
-                                <hr>
-                                <p>' . $dict['TEXT'] . '</p>
-                            </div>
-                            <div class="card-action">
-                                <a class="mdi mdi-pencil rec-edit" href="#">修改</a>
-                                <a class="mdi mdi-delete rec-delete" href="#modal-delete">删除</a>
-                           </div>
-                        </div>
+            ?>
+            <div class="row" id="rec-' . $dict['ID'] . '">
+            <div class="col s12 m12 l12">
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title"><?= $dict['TITLE'] ?></span>
+                        <hr>
+                        <p><?= $dict['TEXT'] ?></p>
                     </div>
-                </div>';
+                    <div class="card-action">
+                        <a class="mdi mdi-pencil rec-edit" href="#">修改</a>
+                        <a class="mdi mdi-delete rec-delete" href="#modal-delete">删除</a>
+                    </div>
+                </div>
+            </div>
+            </div><?php
+            ;
         }
         ?>
     </div>
