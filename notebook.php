@@ -22,7 +22,8 @@ $query_str_delete = "DELETE FROM RECORDS WHERE ID= :id";
 $query_str_insert = "INSERT INTO RECORDS (TITLE,TEXT) VALUES (:title,:text)";
 $query_str_update = "UPDATE RECORDS SET TITLE=:title, TEXT=:text WHERE ID=:id";
 $query_str_select = "SELECT * FROM RECORDS";
-if (isset($_POST) and array_key_exists("action", $_POST) and array_key_exists("id", $_POST) and is_int($_POST["id"])) {
+//is_int似乎不能检测字符串
+if (isset($_POST) and array_key_exists("action", $_POST) and array_key_exists("id", $_POST) and is_int(intval($_POST["id"]))) {
     if ($_POST["action"] == "delete") {
         $db->query($query_str_delete, array("id" => $query_prepare($_POST["id"])));
     }
@@ -68,18 +69,18 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
         </nav>
     </div>
     <script>
-        var nb
+        var nb;
         nb =<?php
-        echo json_encode($nb)
+        echo json_encode($nb);
         ?>;
-        $("#search").val("<?php echo $q_string?>")
+        $("#search").val("<?php echo $q_string?>");
         all_toggle = function () {
-            $(".my-header").toggleClass("hide")
-            $("nav").toggleClass("hide")
-            $("#records").toggleClass("hide")
-            $("#editor").toggleClass("hide")
-            $("#new").toggleClass("hide")
-        }
+            $(".my-header").toggleClass("hide");
+            $("nav").toggleClass("hide");
+            $("#records").toggleClass("hide");
+            $("#editor").toggleClass("hide");
+            $("#new").toggleClass("hide");
+        };
         $(document).ready(function () {
             $("nav").css("width", $(".container").css("width"));
             $(".fixed-action-btn").css("right", 23 + ($(window).width() - $(".container").width()) / 2);
@@ -91,8 +92,8 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
             $("nav").css("width", container_width);
             $(".fixed-action-btn").css("right", 23 + ($(window).width() - $(".container").width()) / 2);
         });
-        var fill_title = ""
-        var fill_text = ""
+        var fill_title = "";
+        var fill_text = "";
     </script>
     <h4 class="my-header">记事本</h4>
     <h5 class="my-header">搜索到<?php echo count($nb); ?>条记录</h5>
@@ -100,7 +101,7 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
         <?php
         foreach ($nb as $index => $dict) {
             ?>
-            <div class="row" id="rec-' . $dict['ID'] . '">
+        <div class="row" id="rec-<?= $dict['ID'] ?>">
             <div class="col s12 m12 l12">
                 <div class="card">
                     <div class="card-content">
@@ -132,7 +133,7 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
                     <p>
                     <div class="input-field">
                         <textarea placeholder="正文" class="materialize-textarea" style="font-size: large"
-                                  id="input-text">    </textarea>
+                                  id="input-text"></textarea>
                     </div>
                     </p>
                 </div>
@@ -165,60 +166,64 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
     </div>
 </div>
 <script>
-    var edit_id = 0
+    var edit_id = 0;
     $("#new").click(function () {
-        all_toggle()
-        edit_id = 0
-        fill_title = ""
-        fill_text = ""
-        $("#input-title").val("")
-        $("#input-text").val("")
-        $("#input-text").trigger("autoresize")
+        all_toggle();
+        edit_id = 0;
+        fill_title = "";
+        fill_text = "";
+        $("#input-title").val("");
+        $("#input-text").val("");
+        $("#input-text").trigger("autoresize");
         $("#delete").addClass("disabled")
     });
     $(".save-no").click(function () {
-        all_toggle()
-        edit_id = 0
-        fill_title = ""
-        fill_text = ""
-    })
+        all_toggle();
+        edit_id = 0;
+        fill_title = "";
+        fill_text = "";
+    });
     $("#back").click(function () {
         if ($("#input-title").val() == fill_title && $("#input-text").val() == fill_text) {
-            all_toggle()
+            all_toggle();
             edit_id = 0
         } else {
             $("#modal-unsave").modal("open")
         }
     });
     $(".rec-edit").click(function () {
-        all_toggle()
-        edit_id = Number($(this).parent().parent().parent().parent().attr("id").substring(4))
+        all_toggle();
+        edit_id = Number($(this).parent().parent().parent().parent().attr("id").substring(4));
         for (rec in nb) {
             if (nb[rec]["ID"] == edit_id) {
-                fill_title = nb[rec]["TITLE"]
-                fill_text = nb[rec]["TEXT"]
+                fill_title = nb[rec]["TITLE"];
+                fill_text = nb[rec]["TEXT"];
             }
         }
-        $("#input-title").val(fill_title)
-        $("#input-text").val(fill_text)
-        $("#input-text").trigger("autoresize")
-        $("#delete").removeClass("disabled")
-
-    })
+        $("#input-title").val(fill_title);
+        $("#input-text").val(fill_text);
+        $("#input-text").trigger("autoresize");
+        $("#delete").removeClass("disabled");
+    });
     $(".rec-delete").click(function () {
         edit_id = Number($(this).parent().parent().parent().parent().attr("id").substring(4))
-    })
+    });
+    //ajax方法
     $("#delete-yes").click(function () {
         $.post("notebook.php", {id: edit_id, action: "delete"}, function (data, status) {
             if (status == "success") {
                 Materialize.toast('删除成功！', 1000, "", function () {
-                    window.location.assign("notebook.php")
+                    $("#rec-" + edit_id).remove();
+                    if ($("h5").hasClass("hide")) {
+                        all_toggle()
+                    }
+                    $("h5").text("搜索到" + $(".row").length + "条记录")
                 })
             } else {
                 Materialize.toast('删除失败！', 4000)
             }
         })
-    })
+    });
     $(".save-yes").click(function () {
         if ($("#input-title").val() == fill_title && $("#input-text").val() == fill_text) {
             Materialize.toast('未修改！', 4000)
@@ -234,21 +239,26 @@ if (isset($_GET) and array_key_exists("q", $_GET)) {
             }, function (data, status) {
                 if (status == "success") {
                     Materialize.toast("保存成功！", 1000, "", function () {
-                        window.location.assign("notebook.php")
+                        $("#rec-" + edit_id).find(".card-title").text($("#input-title").val());
+                        $("#rec-" + edit_id).find("p").text($("#input-text").val());
+                        all_toggle();
+                        if (edit_id == 0) {
+                            window.location.assign("notebook.php")
+                        }
                     })
                 } else {
                     Materialize.toast('保存失败！', 4000)
                 }
             })
         }
-    })
+    });
     $("#search").keydown(function (event) {
         if ($(this).val()) {
             if (event.which == 13) {
                 window.location.assign("notebook.php?q=" + $(this).val())
             }
         }
-    })
+    });
     search_q = function () {
         if ($("#search").val()) {
             window.location.assign("notebook.php?q=" + $("#search").val())
